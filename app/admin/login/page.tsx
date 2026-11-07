@@ -8,37 +8,42 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(''); // State สำหรับเก็บข้อความแจ้งเตือนเมื่อเข้าสู่ระบบไม่ผ่าน
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(''); // รีเซ็ตข้อความ Error ทุกครั้งที่กดปุ่ม Sign In ใหม่
+    setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      // หากรหัสผ่านไม่ถูกหรือเกิดข้อผิดพลาดจาก Supabase ให้เซ็ตข้อความแจ้งเตือน
-      setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      if (error) {
+        setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        setLoading(false);
+      } else {
+        // ล็อกอินสำเร็จ รีเฟรชและพาไปหน้าแดชบอร์ด
+        router.refresh();
+        router.push('/admin');
+        console.log("มีuser");
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
       setLoading(false);
-    } else {
-      // Login สำเร็จ พาไปหน้าแดชบอร์ดแอดมิน
-      router.push('/admin');
-      router.refresh();
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 w-full">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Login</h1>
         <p className="text-sm text-gray-400 mb-6">Sign in to manage ShuttleTrack system</p>
 
-        {/* กล่องแสดงข้อความแจ้งเตือนเมื่อรหัสผ่านไม่ถูกต้อง */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl font-medium">
             {error}
@@ -80,5 +85,5 @@ export default function AdminLoginPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
