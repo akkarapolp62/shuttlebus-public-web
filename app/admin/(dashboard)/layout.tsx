@@ -1,42 +1,46 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
 
-async function DashboardContent({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {}
-        },
-      },
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.replace('/login');
+      } else {
+        setUser(session.user);
+        setLoading(false);
+      }
     }
-  );
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+    checkAuth();
+  }, [router]);
 
-  // ✅ ถ้าไม่มี user หรือเกิด error ให้เรียก redirect อยู่นอก try...catch ทันที
-  if (userError || !user) {
-    redirect('/admin/login');
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-400 text-sm">
+        กำลังตรวจสอบสิทธิ์เข้าใช้งาน...
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex bg-gray-50 w-full">
       {/* Sidebar เมนูด้านข้าง */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
         <div className="p-6 border-b border-gray-100">
           <h1 className="font-bold text-gray-800 text-lg">Shuttle Track</h1>
           <p className="text-xs text-gray-400">Admin Panel</p>
@@ -59,9 +63,9 @@ async function DashboardContent({ children }: { children: React.ReactNode }) {
             🚏 Stops
           </Link>
         </nav>
-
+        
         <div className="p-4 border-t border-gray-100 text-xs text-gray-500">
-          <p className="font-semibold truncate">{user.email}</p>
+          <p className="font-semibold truncate">{user?.email}</p>
         </div>
       </aside>
 
@@ -70,17 +74,5 @@ async function DashboardContent({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </div>
-  );
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">กำลังโหลดระบบแอดมิน...</div>}>
-      <DashboardContent>{children}</DashboardContent>
-    </Suspense>
   );
 }

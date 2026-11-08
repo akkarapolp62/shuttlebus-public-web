@@ -75,7 +75,7 @@ export default function PublicHomePage() {
               <span>รถให้บริการ: <strong>{activeVehiclesCount} คัน</strong></span>
             </div>
             <Link
-              href="/admin/login"
+              href="/login"
               className="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
             >
               Admin Login
