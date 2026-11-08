@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Bus, Route, MapPin, Activity } from "lucide-react";
+import { Bus, Route, MapPin, Activity, LogOut } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // 👈 นำเข้า useRouter สำหรับเปลี่ยนหน้า
 
 const MapComponent = dynamic(() => import("@/components/admin/Map"), {
   ssr: false,
@@ -24,6 +25,13 @@ export default function DashboardPage() {
   });
   const [stops, setStops] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
+  const router = useRouter(); // 👈 ประกาศใช้งาน Router
+
+  // 🚪 ฟังก์ชันออกจากระบบ
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.replace("/login"); // ลบ Session แล้วพาเด้งไปหน้า login
+  };
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -66,18 +74,30 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full p-8 space-y-6">
-      {/* Header และปุ่มทางลัด */}
+      {/* Header และปุ่มทางลัด + ปุ่มออกจากระบบ */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-500 text-sm">Overview of the ShuttleTrack system</p>
         </div>
-        <Link
-          href="/"
-          className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
-        >
-          ← กลับสู่หน้าเว็บ Public
-        </Link>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+          >
+            ← กลับสู่หน้าเว็บ Public
+          </Link>
+
+          {/* 🚪 ปุ่มออกจากระบบ */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition shadow-sm"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            ออกจากระบบ
+          </button>
+        </div>
       </div>
 
       {/* การ์ดสถิติ 4 ช่อง */}
